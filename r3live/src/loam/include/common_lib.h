@@ -1,35 +1,36 @@
 #ifndef COMMON_LIB_H
 #define COMMON_LIB_H
 
-#include <Eigen/Eigen>
-#include <nav_msgs/Odometry.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <rosbag/bag.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <so3_math.h>
+#include <Eigen/Eigen>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/PointCloud.h>
+#include <nav_msgs/Odometry.h>
+#include <rosbag/bag.h>
 
-#include "lib_sophus/se3.hpp"
-#include "lib_sophus/so3.hpp"
+#include <tf/transform_broadcaster.h>
+#include <eigen_conversions/eigen_msg.h>
 #include "tools_color_printf.hpp"
 #include "tools_eigen.hpp"
 #include "tools_ros.hpp"
-#include <deque>
-#include <eigen_conversions/eigen_msg.h>
 #include <queue>
-#include <tf/transform_broadcaster.h>
+#include <deque>
+#include "lib_sophus/se3.hpp"
+#include "lib_sophus/so3.hpp"
 // #define DEBUG_PRINT
 #define USE_ikdtree
-#define ESTIMATE_GRAVITY 1
+#define ESTIMATE_GRAVITY  1
 #define ENABLE_CAMERA_OBS 1
 // #define USE_FOV_Checker
 
 #define printf_line std::cout << __FILE__ << " " << __LINE__ << std::endl;
 
 #define PI_M (3.14159265358)
-#define G_m_s2 (9.81) // Gravity const in Hong Kong SAR, China
+#define G_m_s2 (9.81)     // Gravity const in Hong Kong SAR, China
 #if ENABLE_CAMERA_OBS
 #define DIM_OF_STATES (29) // with vio obs
 #else
@@ -70,7 +71,8 @@ struct Pose6D
     data_type gyr[3];
 };
 
-template <typename T = double> inline Eigen::Matrix<T, 3, 3> vec_to_hat(Eigen::Matrix<T, 3, 1> &omega)
+template <typename T = double>
+inline Eigen::Matrix<T, 3, 3> vec_to_hat(Eigen::Matrix<T, 3, 1> &omega)
 {
     Eigen::Matrix<T, 3, 3> res_mat_33;
     res_mat_33.setZero();
@@ -83,42 +85,45 @@ template <typename T = double> inline Eigen::Matrix<T, 3, 3> vec_to_hat(Eigen::M
     return res_mat_33;
 }
 
-template <typename T = double> T cot(const T theta)
+template < typename T = double > 
+T cot(const T theta)
 {
     return 1.0 / std::tan(theta);
 }
 
-template <typename T = double>
-inline Eigen::Matrix<T, 3, 3> right_jacobian_of_rotion_matrix(const Eigen::Matrix<T, 3, 1> &omega)
+template < typename T = double >
+inline Eigen::Matrix< T, 3, 3 > right_jacobian_of_rotion_matrix(const Eigen::Matrix< T, 3, 1 > & omega)
 {
-    // Barfoot, Timothy D, State estimation for robotics. Page 232-237
-    Eigen::Matrix<T, 3, 3> res_mat_33;
+    //Barfoot, Timothy D, State estimation for robotics. Page 232-237
+    Eigen::Matrix< T, 3, 3>   res_mat_33;
 
     T theta = omega.norm();
-    if (std::isnan(theta) || theta == 0)
-        return Eigen::Matrix<T, 3, 3>::Identity();
-    Eigen::Matrix<T, 3, 1> a = omega / theta;
-    Eigen::Matrix<T, 3, 3> hat_a = vec_to_hat(a);
-    res_mat_33 = sin(theta) / theta * Eigen::Matrix<T, 3, 3>::Identity() +
-                 (1 - (sin(theta) / theta)) * a * a.transpose() + ((1 - cos(theta)) / theta) * hat_a;
+    if(std::isnan(theta) || theta == 0)
+        return Eigen::Matrix< T, 3, 3>::Identity();
+    Eigen::Matrix< T, 3, 1 > a = omega/ theta;
+    Eigen::Matrix< T, 3, 3 > hat_a = vec_to_hat(a);
+    res_mat_33 = sin(theta)/theta * Eigen::Matrix< T, 3, 3 >::Identity()
+                    + (1 - (sin(theta)/theta))*a*a.transpose() 
+                    + ((1 - cos(theta))/theta)*hat_a;
     // cout << "Omega: " << omega.transpose() << endl;
     // cout << "Res_mat_33:\r\n"  <<res_mat_33 << endl;
     return res_mat_33;
 }
 
-template <typename T = double>
-Eigen::Matrix<T, 3, 3> inverse_right_jacobian_of_rotion_matrix(const Eigen::Matrix<T, 3, 1> &omega)
+template < typename T = double >
+Eigen::Matrix< T, 3, 3 > inverse_right_jacobian_of_rotion_matrix(const Eigen::Matrix< T, 3, 1> & omega)
 {
-    // Barfoot, Timothy D, State estimation for robotics. Page 232-237
-    Eigen::Matrix<T, 3, 3> res_mat_33;
+    //Barfoot, Timothy D, State estimation for robotics. Page 232-237
+    Eigen::Matrix< T, 3, 3>   res_mat_33;
 
     T theta = omega.norm();
-    if (std::isnan(theta) || theta == 0)
-        return Eigen::Matrix<T, 3, 3>::Identity();
-    Eigen::Matrix<T, 3, 1> a = omega / theta;
-    Eigen::Matrix<T, 3, 3> hat_a = vec_to_hat(a);
-    res_mat_33 = (theta / 2) * (cot(theta / 2)) * Eigen::Matrix<T, 3, 3>::Identity() +
-                 (1 - (theta / 2) * (cot(theta / 2))) * a * a.transpose() + (theta / 2) * hat_a;
+    if(std::isnan(theta) || theta == 0)
+        return Eigen::Matrix< T, 3, 3>::Identity();
+    Eigen::Matrix< T, 3, 1 > a = omega/ theta;
+    Eigen::Matrix< T, 3, 3 > hat_a = vec_to_hat(a);
+    res_mat_33 = (theta / 2) * (cot(theta / 2)) * Eigen::Matrix<T, 3, 3>::Identity() 
+                + (1 - (theta / 2) * (cot(theta / 2))) * a * a.transpose() 
+                + (theta / 2) * hat_a;
     // cout << "Omega: " << omega.transpose() << endl;
     // cout << "Res_mat_33:\r\n"  <<res_mat_33 << endl;
     return res_mat_33;
@@ -147,15 +152,14 @@ struct Camera_Lidar_queue
     std::string m_bag_file_name;
     int m_if_dump_log = 1;
 
-    // std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>>
-    // *m_camera_frame_buf = nullptr;
+    // std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>> *m_camera_frame_buf = nullptr;
     std::deque<sensor_msgs::PointCloud2::ConstPtr> *m_liar_frame_buf = nullptr;
 
-    double time_wrt_first_imu_time(double &time)
+    double time_wrt_first_imu_time(double & time)
     {
         return time - m_first_imu_time;
     }
-
+    
     Camera_Lidar_queue()
     {
         m_if_have_lidar_data = 0;
@@ -170,7 +174,7 @@ struct Camera_Lidar_queue
             m_first_imu_time = in_time;
         }
         m_last_imu_time = std::max(in_time, m_last_imu_time);
-        // m_last_imu_time = in_time;
+        //m_last_imu_time = in_time;
         return m_last_imu_time;
     }
 
@@ -184,8 +188,7 @@ struct Camera_Lidar_queue
         }
         if (in_time < m_last_imu_time - m_sliding_window_tim)
         {
-            std::cout << ANSI_COLOR_RED_BOLD << "LiDAR incoming frame too old, need to be drop!!!" << ANSI_COLOR_RESET
-                      << std::endl;
+            std::cout << ANSI_COLOR_RED_BOLD << "LiDAR incoming frame too old, need to be drop!!!" << ANSI_COLOR_RESET << std::endl;
             // TODO: Drop LiDAR frame
         }
         // m_last_lidar_time = in_time;
@@ -196,8 +199,7 @@ struct Camera_Lidar_queue
     {
         if (in_time < m_last_imu_time - m_sliding_window_tim)
         {
-            std::cout << ANSI_COLOR_RED_BOLD << "Camera incoming frame too old, need to be drop!!!" << ANSI_COLOR_RESET
-                      << std::endl;
+            std::cout << ANSI_COLOR_RED_BOLD << "Camera incoming frame too old, need to be drop!!!" << ANSI_COLOR_RESET << std::endl;
             // TODO: Drop camera frame
         }
         return 1;
@@ -246,8 +248,7 @@ struct Camera_Lidar_queue
         else
         {
             // scope_color(ANSI_COLOR_YELLOW_BOLD);
-            // cout << "Camera can update, " << get_lidar_front_time() - m_first_imu_time << " | " <<
-            // get_camera_front_time() - m_first_imu_time << endl;
+            // cout << "Camera can update, " << get_lidar_front_time() - m_first_imu_time << " | " << get_camera_front_time() - m_first_imu_time << endl;
             return true;
         }
         return false;
@@ -258,8 +259,7 @@ struct Camera_Lidar_queue
         double cam_last_time = get_camera_front_time();
         double lidar_last_time = get_lidar_front_time();
         scope_color(ANSI_COLOR_GREEN_BOLD);
-        cout << std::setprecision(15) << "Camera time = " << cam_last_time << ", LiDAR last time =  " << lidar_last_time
-             << endl;
+        cout<< std::setprecision(15) <<  "Camera time = " << cam_last_time << ", LiDAR last time =  "<< lidar_last_time << endl;        
     }
 
     bool if_lidar_can_process()
@@ -274,9 +274,10 @@ struct Camera_Lidar_queue
 
         if (cam_last_time < 0 || lidar_last_time < 0)
         {
-            // cout << "Cam_tim = " << cam_last_time << ", lidar_last_time = " << lidar_last_time << endl;
+            // cout << "Cam_tim = " << cam_last_time << ", lidar_last_time = " << lidar_last_time << endl; 
             return false;
         }
+
 
         if (lidar_last_time > cam_last_time)
         {
@@ -286,8 +287,8 @@ struct Camera_Lidar_queue
         else
         {
             // scope_color(ANSI_COLOR_BLUE_BOLD);
-            // cout << "LiDAR can update, " << get_lidar_front_time() - m_first_imu_time << " | " <<
-            // get_camera_front_time() - m_first_imu_time << endl; printf_line;
+            // cout << "LiDAR can update, " << get_lidar_front_time() - m_first_imu_time << " | " << get_camera_front_time() - m_first_imu_time << endl;
+            // printf_line;
             return true;
         }
         return false;
@@ -309,23 +310,23 @@ struct MeasureGroup // Lidar data and imu dates for the curent process
 struct StatesGroup
 {
 
-  public:
+public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    Eigen::Matrix3d rot_end; // [0-2] the estimated attitude (rotation matrix) at the end lidar point
-    Eigen::Vector3d pos_end; // [3-5] the estimated position at the end lidar point (world frame)
-    Eigen::Vector3d vel_end; // [6-8] the estimated velocity at the end lidar point (world frame)
-    Eigen::Vector3d bias_g;  // [9-11] gyroscope bias
-    Eigen::Vector3d bias_a;  // [12-14] accelerator bias
-    Eigen::Vector3d gravity; // [15-17] the estimated gravity acceleration
+    Eigen::Matrix3d rot_end;                                 // [0-2] the estimated attitude (rotation matrix) at the end lidar point
+    Eigen::Vector3d pos_end;                                 // [3-5] the estimated position at the end lidar point (world frame)
+    Eigen::Vector3d vel_end;                                 // [6-8] the estimated velocity at the end lidar point (world frame)
+    Eigen::Vector3d bias_g;                                  // [9-11] gyroscope bias
+    Eigen::Vector3d bias_a;                                  // [12-14] accelerator bias
+    Eigen::Vector3d gravity;                                 // [15-17] the estimated gravity acceleration
 
-    Eigen::Matrix3d rot_ext_i2c; // [18-20] Extrinsic between IMU frame to Camera frame on rotation.
-    Eigen::Vector3d pos_ext_i2c; // [21-23] Extrinsic between IMU frame to Camera frame on position.
-    double td_ext_i2c_delta;     // [24]    Extrinsic between IMU frame to Camera frame on position.
-    vec_4 cam_intrinsic;         // [25-28] Intrinsice of camera [fx, fy, cx, cy]
+    Eigen::Matrix3d rot_ext_i2c;                             // [18-20] Extrinsic between IMU frame to Camera frame on rotation.
+    Eigen::Vector3d pos_ext_i2c;                             // [21-23] Extrinsic between IMU frame to Camera frame on position.
+    double          td_ext_i2c_delta;                        // [24]    Extrinsic between IMU frame to Camera frame on position.
+    vec_4           cam_intrinsic;                           // [25-28] Intrinsice of camera [fx, fy, cx, cy]
     Eigen::Matrix<double, DIM_OF_STATES, DIM_OF_STATES> cov; // states covariance
     double last_update_time = 0;
-    double td_ext_i2c;
+    double          td_ext_i2c;
     StatesGroup()
     {
         rot_end = Eigen::Matrix3d::Identity();
@@ -336,7 +337,7 @@ struct StatesGroup
         gravity = Eigen::Vector3d(0.0, 0.0, 9.805);
         // gravity = Eigen::Vector3d(0.0, 9.805, 0.0);
 
-        // Ext camera w.r.t. IMU
+        //Ext camera w.r.t. IMU
         rot_ext_i2c = Eigen::Matrix3d::Identity();
         pos_ext_i2c = vec_3::Zero();
 
@@ -347,9 +348,7 @@ struct StatesGroup
         td_ext_i2c = 0;
     }
 
-    ~StatesGroup()
-    {
-    }
+    ~StatesGroup(){}
 
     StatesGroup operator+(const Eigen::Matrix<double, DIM_OF_STATES, 1> &state_add)
     {
@@ -366,10 +365,10 @@ struct StatesGroup
 
         a.cov = this->cov;
         a.last_update_time = this->last_update_time;
-#if ENABLE_CAMERA_OBS
-        // Ext camera w.r.t. IMU
-        a.rot_ext_i2c = this->rot_ext_i2c * Exp(state_add(18), state_add(19), state_add(20));
-        a.pos_ext_i2c = this->pos_ext_i2c + state_add.block<3, 1>(21, 0);
+#if ENABLE_CAMERA_OBS                
+        //Ext camera w.r.t. IMU
+        a.rot_ext_i2c = this->rot_ext_i2c * Exp(  state_add(18), state_add(19), state_add(20) );
+        a.pos_ext_i2c = this->pos_ext_i2c + state_add.block<3,1>( 21, 0 );
         a.td_ext_i2c_delta = this->td_ext_i2c_delta + state_add(24);
         a.cam_intrinsic = this->cam_intrinsic + state_add.block(25, 0, 4, 1);
 #endif
@@ -386,12 +385,12 @@ struct StatesGroup
 #if ESTIMATE_GRAVITY
         this->gravity += state_add.block<3, 1>(15, 0);
 #endif
-#if ENABLE_CAMERA_OBS
-        // Ext camera w.r.t. IMU
-        this->rot_ext_i2c = this->rot_ext_i2c * Exp(state_add(18), state_add(19), state_add(20));
-        this->pos_ext_i2c = this->pos_ext_i2c + state_add.block<3, 1>(21, 0);
+#if ENABLE_CAMERA_OBS        
+        //Ext camera w.r.t. IMU
+        this->rot_ext_i2c = this->rot_ext_i2c * Exp(  state_add(18), state_add(19), state_add(20));
+        this->pos_ext_i2c = this->pos_ext_i2c + state_add.block<3,1>( 21, 0 );
         this->td_ext_i2c_delta = this->td_ext_i2c_delta + state_add(24);
-        this->cam_intrinsic = this->cam_intrinsic + state_add.block(25, 0, 4, 1);
+        this->cam_intrinsic = this->cam_intrinsic + state_add.block(25, 0, 4, 1);   
 #endif
         return *this;
     }
@@ -407,8 +406,8 @@ struct StatesGroup
         a.block<3, 1>(12, 0) = this->bias_a - b.bias_a;
         a.block<3, 1>(15, 0) = this->gravity - b.gravity;
 
-#if ENABLE_CAMERA_OBS
-        // Ext camera w.r.t. IMU
+#if ENABLE_CAMERA_OBS    
+        //Ext camera w.r.t. IMU
         Eigen::Matrix3d rotd_ext_i2c(b.rot_ext_i2c.transpose() * this->rot_ext_i2c);
         a.block<3, 1>(18, 0) = SO3_LOG(rotd_ext_i2c);
         a.block<3, 1>(21, 0) = this->pos_ext_i2c - b.pos_ext_i2c;
@@ -431,12 +430,14 @@ struct StatesGroup
     }
 };
 
-template <typename T> T rad2deg(T radians)
+template <typename T>
+T rad2deg(T radians)
 {
     return radians * 180.0 / PI_M;
 }
 
-template <typename T> T deg2rad(T degrees)
+template <typename T>
+T deg2rad(T degrees)
 {
     return degrees * PI_M / 180.0;
 }

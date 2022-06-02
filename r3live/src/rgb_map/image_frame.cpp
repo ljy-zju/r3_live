@@ -1,21 +1,21 @@
-/*
-This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored,
+/* 
+This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored, 
 LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package".
 
 Author: Jiarong Lin   < ziv.lin.ljr@gmail.com >
 
 If you use any code of this repo in your academic research, please cite at least
 one of our papers:
-[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored,
-    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package."
+[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored, 
+    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package." 
 [2] Xu, Wei, et al. "Fast-lio2: Fast direct lidar-inertial odometry."
 [3] Lin, Jiarong, et al. "R2LIVE: A Robust, Real-time, LiDAR-Inertial-Visual
-     tightly-coupled state Estimator and mapping."
-[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry
+     tightly-coupled state Estimator and mapping." 
+[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry 
     package by tightly-coupled iterated kalman filter."
-[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for
+[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for 
     Robotic Applications."
-[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision
+[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision 
     LiDAR odometry and mapping package for LiDARs of small FoV."
 
 For commercial use, please contact me < ziv.lin.ljr@gmail.com > and
@@ -49,8 +49,8 @@ Dr. Fu Zhang < fuzhang@hku.hk >.
 
 Image_frame::Image_frame()
 {
-    m_gama_para(0) = 1.0;
-    m_gama_para(1) = 0.0;
+    m_gama_para( 0 ) = 1.0;
+    m_gama_para( 1 ) = 0.0;
     m_pose_w2c_q.setIdentity();
     m_pose_w2c_t.setZero();
 };
@@ -106,6 +106,7 @@ Image_frame::Image_frame(Eigen::Matrix3d &camera_K)
     set_intrinsic(camera_K);
 };
 
+
 void Image_frame::init_cubic_interpolation()
 {
     m_pose_w2c_R = m_pose_w2c_q.toRotationMatrix();
@@ -128,23 +129,20 @@ void Image_frame::inverse_pose()
     m_pose_c2w_t = -(m_pose_w2c_q.inverse() * m_pose_w2c_t);
 }
 
-bool Image_frame::project_3d_to_2d(const pcl::PointXYZI &in_pt, Eigen::Matrix3d &cam_K, double &u, double &v,
-                                   const double &scale)
+bool Image_frame::project_3d_to_2d(const pcl::PointXYZI & in_pt, Eigen::Matrix3d &cam_K, double &u, double &v, const double &scale)
 {
     if (!m_if_have_set_pose)
     {
         cout << ANSI_COLOR_RED_BOLD << "You have not set the camera pose yet!" << ANSI_COLOR_RESET << endl;
         // refresh_pose_for_projection();
         while (1)
-        {
-        };
+        {};
     }
     if (m_if_have_set_intrinsic == 0)
     {
         cout << "You have not set the intrinsic yet!!!" << endl;
         while (1)
-        {
-        };
+        {} ;
         return false;
     }
 
@@ -167,10 +165,8 @@ bool Image_frame::if_2d_points_available(const double &u, const double &v, const
     {
         used_fov_margin = fov_mar;
     }
-    if ((u / scale >= (used_fov_margin * m_img_cols + 1)) &&
-        (std::ceil(u / scale) < ((1 - used_fov_margin) * m_img_cols)) &&
-        (v / scale >= (used_fov_margin * m_img_rows + 1)) &&
-        (std::ceil(v / scale) < ((1 - used_fov_margin) * m_img_rows)))
+    if ((u / scale >= (used_fov_margin * m_img_cols + 1)) && (std::ceil(u / scale) < ((1 - used_fov_margin) * m_img_cols)) &&
+        (v / scale >= (used_fov_margin * m_img_rows + 1)) && (std::ceil(v / scale) < ((1 - used_fov_margin) * m_img_rows)))
     {
         return true;
     }
@@ -180,14 +176,15 @@ bool Image_frame::if_2d_points_available(const double &u, const double &v, const
     }
 }
 
-template <typename T> inline T getSubPixel(cv::Mat &mat, const double &row, const double &col, double pyramid_layer = 0)
+template<typename T>
+inline T getSubPixel(cv::Mat & mat, const double & row, const  double & col, double pyramid_layer = 0)
 {
-    int floor_row = floor(row);
-    int floor_col = floor(col);
-    double frac_row = row - floor_row;
-    double frac_col = col - floor_col;
-    int ceil_row = floor_row + 1;
-    int ceil_col = floor_col + 1;
+	int floor_row = floor(row);
+	int floor_col = floor(col);
+	double frac_row = row - floor_row;
+	double frac_col = col - floor_col;
+	int ceil_row = floor_row + 1;
+	int ceil_col = floor_col + 1;
     if (pyramid_layer != 0)
     {
         int pos_bias = pow(2, pyramid_layer - 1);
@@ -197,64 +194,64 @@ template <typename T> inline T getSubPixel(cv::Mat &mat, const double &row, cons
         ceil_row += pos_bias;
     }
     return ((1.0 - frac_row) * (1.0 - frac_col) * (T)mat.ptr<T>(floor_row)[floor_col]) +
-           (frac_row * (1.0 - frac_col) * (T)mat.ptr<T>(ceil_row)[floor_col]) +
-           ((1.0 - frac_row) * frac_col * (T)mat.ptr<T>(floor_row)[ceil_col]) +
-           (frac_row * frac_col * (T)mat.ptr<T>(ceil_row)[ceil_col]);
+               (frac_row * (1.0 - frac_col) * (T)mat.ptr<T>(ceil_row)[floor_col]) +
+               ((1.0 - frac_row) * frac_col * (T)mat.ptr<T>(floor_row)[ceil_col]) +
+               (frac_row * frac_col * (T)mat.ptr<T>(ceil_row)[ceil_col]);
 }
 
-vec_3 Image_frame::get_rgb(double &u, double v, int layer, vec_3 *rgb_dx, vec_3 *rgb_dy)
+vec_3 Image_frame::get_rgb( double &u, double v, int layer, vec_3 *rgb_dx, vec_3 *rgb_dy )
 {
     const int ssd = 5;
-    cv::Vec3b rgb = getSubPixel<cv::Vec3b>(m_img, v, u, layer);
-    if (rgb_dx != nullptr)
+    cv::Vec3b rgb = getSubPixel< cv::Vec3b >( m_img, v, u, layer );
+    if ( rgb_dx != nullptr )
     {
-        cv::Vec3f rgb_left(0, 0, 0), rgb_right(0, 0, 0);
-        float pixel_dif = 0;
-        for (int bias_idx = 1; bias_idx < ssd; bias_idx++)
+        cv::Vec3f rgb_left( 0, 0, 0 ), rgb_right( 0, 0, 0 );
+        float     pixel_dif = 0;
+        for ( int bias_idx = 1; bias_idx < ssd; bias_idx++ )
         {
-            rgb_left += getSubPixel<cv::Vec3b>(m_img, v, u - bias_idx, layer);
-            rgb_right += getSubPixel<cv::Vec3b>(m_img, v, u + bias_idx, layer);
+            rgb_left += getSubPixel< cv::Vec3b >( m_img, v, u - bias_idx, layer );
+            rgb_right += getSubPixel< cv::Vec3b >( m_img, v, u + bias_idx, layer );
             pixel_dif += 2 * bias_idx;
         }
         cv::Vec3f cv_rgb_dx = rgb_right - rgb_left;
-        *rgb_dx = vec_3(cv_rgb_dx(0), cv_rgb_dx(1), cv_rgb_dx(2)) / pixel_dif;
+        *rgb_dx = vec_3( cv_rgb_dx( 0 ), cv_rgb_dx( 1 ), cv_rgb_dx( 2 ) ) / pixel_dif;
     }
-    if (rgb_dy != nullptr)
+    if ( rgb_dy != nullptr )
     {
-        cv::Vec3f rgb_down(0, 0, 0), rgb_up(0, 0, 0);
-        float pixel_dif = 0;
-        for (int bias_idx = 1; bias_idx < ssd; bias_idx++)
+        cv::Vec3f rgb_down( 0, 0, 0 ), rgb_up( 0, 0, 0 );
+        float     pixel_dif = 0;
+        for ( int bias_idx = 1; bias_idx < ssd; bias_idx++ )
         {
-            rgb_down += getSubPixel<cv::Vec3b>(m_img, v - bias_idx, u, layer);
-            rgb_up += getSubPixel<cv::Vec3b>(m_img, v + bias_idx, u, layer);
+            rgb_down += getSubPixel< cv::Vec3b >( m_img, v - bias_idx, u, layer );
+            rgb_up += getSubPixel< cv::Vec3b >( m_img, v + bias_idx, u, layer );
             pixel_dif += 2 * bias_idx;
         }
         cv::Vec3f cv_rgb_dy = rgb_up - rgb_down;
-        *rgb_dy = vec_3(cv_rgb_dy(0), cv_rgb_dy(1), cv_rgb_dy(2)) / pixel_dif;
+        *rgb_dy = vec_3( cv_rgb_dy( 0 ), cv_rgb_dy( 1 ), cv_rgb_dy( 2 ) ) / pixel_dif;
     }
-    return vec_3(rgb(0), rgb(1), rgb(2));
+    return vec_3( rgb( 0 ), rgb( 1 ), rgb( 2 ) );
 }
 
-double Image_frame::get_grey_color(double &u, double &v, int layer)
+double Image_frame::get_grey_color( double &u, double &v, int layer )
 {
     double val = 0;
 
-    if (layer == 0)
+    if ( layer == 0 )
     {
-        double gray_val = getSubPixel<uchar>(m_img, v, u);
+        double gray_val = getSubPixel< uchar >( m_img, v, u );
         return gray_val;
     }
     else
     {
         // TODO
-        while (1)
+        while ( 1 )
         {
             cout << "To be process here" << __LINE__ << endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         };
     }
 
-    return m_gama_para(0) * val + m_gama_para(1);
+    return m_gama_para( 0 ) * val + m_gama_para( 1 );
 }
 
 bool Image_frame::get_rgb(const double &u, const double &v, int &r, int &g, int &b)
@@ -267,8 +264,7 @@ bool Image_frame::get_rgb(const double &u, const double &v, int &r, int &g, int 
 
 void Image_frame::display_pose()
 {
-    cout << "Frm [" << m_frame_idx << "], pose: " << m_pose_w2c_q.coeffs().transpose() << " | "
-         << m_pose_w2c_t.transpose() << " | ";
+    cout << "Frm [" << m_frame_idx << "], pose: " << m_pose_w2c_q.coeffs().transpose() << " | " << m_pose_w2c_t.transpose() << " | ";
     cout << fx << ", " << cx << ", " << fy << ", " << cy << ", ";
     cout << endl;
 }
@@ -298,13 +294,13 @@ inline cv::Mat equalize_color_image_Ycrcb(cv::Mat &image)
     cv::Mat hist_equalized_image;
     cv::cvtColor(image, hist_equalized_image, cv::COLOR_BGR2YCrCb);
 
-    // Split the image into 3 channels; Y, Cr and Cb channels respectively and store it in a std::vector
+    //Split the image into 3 channels; Y, Cr and Cb channels respectively and store it in a std::vector
     std::vector<cv::Mat> vec_channels;
     cv::split(hist_equalized_image, vec_channels);
 
-    // Equalize the histogram of only the Y channel
-    //  cv::equalizeHist(vec_channels[0], vec_channels[0]);
-    image_equalize(vec_channels[0], 1);
+    //Equalize the histogram of only the Y channel
+    // cv::equalizeHist(vec_channels[0], vec_channels[0]);
+    image_equalize( vec_channels[0], 1 );
     cv::merge(vec_channels, hist_equalized_image);
     cv::cvtColor(hist_equalized_image, hist_equalized_image, cv::COLOR_YCrCb2BGR);
     return hist_equalized_image;
@@ -318,8 +314,7 @@ void Image_frame::image_equalize()
     // cv::imshow("After", m_img.clone());
 }
 
-bool Image_frame::project_3d_point_in_this_img(const pcl::PointXYZI &in_pt, double &u, double &v,
-                                               pcl::PointXYZRGB *rgb_pt, double intrinsic_scale)
+bool Image_frame::project_3d_point_in_this_img(const pcl::PointXYZI & in_pt, double &u, double &v, pcl::PointXYZRGB *rgb_pt, double intrinsic_scale)
 {
     if (project_3d_to_2d(in_pt, m_cam_K, u, v, intrinsic_scale) == false)
     {
@@ -347,8 +342,7 @@ bool Image_frame::project_3d_point_in_this_img(const pcl::PointXYZI &in_pt, doub
     return true;
 }
 
-bool Image_frame::project_3d_point_in_this_img(const vec_3 &in_pt, double &u, double &v, pcl::PointXYZRGB *rgb_pt,
-                                               double intrinsic_scale)
+bool Image_frame::project_3d_point_in_this_img(const vec_3 & in_pt, double &u, double &v, pcl::PointXYZRGB *rgb_pt, double intrinsic_scale)
 {
     pcl::PointXYZI temp_pt;
     temp_pt.x = in_pt(0);
@@ -364,8 +358,8 @@ void Image_frame::dump_pose_and_image(const std::string name_prefix)
     FILE *fp = fopen(txt_file_name.c_str(), "w+");
     if (fp)
     {
-        fprintf(fp, "%lf %lf %lf %lf %lf %lf %lf\r\n", m_pose_w2c_q.w(), m_pose_w2c_q.x(), m_pose_w2c_q.y(),
-                m_pose_w2c_q.z(), m_pose_w2c_t(0), m_pose_w2c_t(1), m_pose_w2c_t(2));
+        fprintf(fp, "%lf %lf %lf %lf %lf %lf %lf\r\n", m_pose_w2c_q.w(), m_pose_w2c_q.x(), m_pose_w2c_q.y(), m_pose_w2c_q.z(),
+                m_pose_w2c_t(0), m_pose_w2c_t(1), m_pose_w2c_t(2));
         fclose(fp);
     }
     cv::imwrite(image_file_name, m_img);
