@@ -11,7 +11,8 @@
 
 #include "Common.h"
 
-namespace SEACAVE {
+namespace SEACAVE
+{
 #if TD_VERBOSE == TD_VERBOSE_ON
 int g_nVerbosityLevel(2);
 #endif
@@ -25,12 +26,14 @@ String g_strWorkingFolderFull;
 
 #ifdef _USE_BOOST
 #ifdef BOOST_NO_EXCEPTIONS
-namespace boost {
-	void throw_exception(std::exception const & e) {
-		VERBOSE("exception thrown: %s", e.what());
-		ASSERT("boost exception thrown" == NULL);
-		exit(EXIT_FAILURE);
-	}
+namespace boost
+{
+void throw_exception(std::exception const &e)
+{
+    VERBOSE("exception thrown: %s", e.what());
+    ASSERT("boost exception thrown" == NULL);
+    exit(EXIT_FAILURE);
+}
 } // namespace boost
 #endif
 #endif

@@ -40,11 +40,11 @@
 //
 //M*/
 
-#include <float.h>
-#include <stdio.h>
 #include "lkpyramid.hpp"
 #include "tools_logger.hpp"
+#include <float.h>
 #include <omp.h>
+#include <stdio.h>
 
 #define CV_DESCALE(x, n) (((x) + (1 << ((n)-1))) >> (n))
 using namespace cv;
@@ -66,23 +66,21 @@ inline void calc_sharr_deriv(const cv::Mat &src, cv::Mat &dst)
     AutoBuffer<deriv_type> _tempBuf(delta * 2 + 64);
     deriv_type *trow0 = alignPtr(_tempBuf + cn, 16), *trow1 = alignPtr(trow0 + delta, 16);
 
-// #if CV_SIMD128
+    // #if CV_SIMD128
     v_int16x8 c3 = v_setall_s16(3), c10 = v_setall_s16(10);
     bool haveSIMD = checkHardwareSupport(CV_CPU_SSE2) || checkHardwareSupport(CV_CPU_NEON);
-// #endif
+    // #endif
 
     for (y = 0; y < rows; y++)
     {
-        const uchar *srow0 = src.ptr<uchar>(y > 0 ? y - 1 : rows > 1 ? 1
-                                                                     : 0);
+        const uchar *srow0 = src.ptr<uchar>(y > 0 ? y - 1 : rows > 1 ? 1 : 0);
         const uchar *srow1 = src.ptr<uchar>(y);
-        const uchar *srow2 = src.ptr<uchar>(y < rows - 1 ? y + 1 : rows > 1 ? rows - 2
-                                                                            : 0);
+        const uchar *srow2 = src.ptr<uchar>(y < rows - 1 ? y + 1 : rows > 1 ? rows - 2 : 0);
         deriv_type *drow = dst.ptr<deriv_type>(y);
 
         // do vertical convolution
         x = 0;
-// #if CV_SIMD128
+        // #if CV_SIMD128
         if (haveSIMD)
         {
             for (; x <= colsn - 8; x += 8)
@@ -98,7 +96,7 @@ inline void calc_sharr_deriv(const cv::Mat &src, cv::Mat &dst)
                 v_store(trow1 + x, t1);
             }
         }
-// #endif
+        // #endif
 
         for (; x < colsn; x++)
         {
@@ -120,7 +118,7 @@ inline void calc_sharr_deriv(const cv::Mat &src, cv::Mat &dst)
 
         // do horizontal convolution, interleave the results and store them to dst
         x = 0;
-// #if CV_SIMD128
+        // #if CV_SIMD128
         if (haveSIMD)
         {
             for (; x <= colsn - 8; x += 8)
@@ -137,7 +135,7 @@ inline void calc_sharr_deriv(const cv::Mat &src, cv::Mat &dst)
                 v_store_interleave((drow + x * 2), t0, t1);
             }
         }
-// #endif
+        // #endif
         for (; x < colsn; x++)
         {
             deriv_type t0 = (deriv_type)(trow0[x + cn] - trow0[x - cn]);
@@ -148,12 +146,10 @@ inline void calc_sharr_deriv(const cv::Mat &src, cv::Mat &dst)
     }
 }
 
-opencv_LKTrackerInvoker::opencv_LKTrackerInvoker(
-    const Mat *_prevImg, const Mat *_prevDeriv, const Mat *_nextImg,
-    const Point2f *_prevPts, Point2f *_nextPts,
-    uchar *_status, float *_err,
-    Size _winSize, TermCriteria _criteria,
-    int _level, int _maxLevel, int _flags, float _minEigThreshold)
+opencv_LKTrackerInvoker::opencv_LKTrackerInvoker(const Mat *_prevImg, const Mat *_prevDeriv, const Mat *_nextImg,
+                                                 const Point2f *_prevPts, Point2f *_nextPts, uchar *_status,
+                                                 float *_err, Size _winSize, TermCriteria _criteria, int _level,
+                                                 int _maxLevel, int _flags, float _minEigThreshold)
 {
     prevImg = _prevImg;
     prevDeriv = _prevDeriv;
@@ -170,11 +166,10 @@ opencv_LKTrackerInvoker::opencv_LKTrackerInvoker(
     minEigThreshold = _minEigThreshold;
 }
 
-inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg, const Mat *prevDeriv, const Mat *nextImg,
-                                      const Point2f *prevPts, Point2f *nextPts,
-                                      uchar *status, float *err,
-                                      Size winSize, TermCriteria criteria,
-                                      int level, int maxLevel, int flags, float minEigThreshold)
+inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg, const Mat *prevDeriv,
+                                      const Mat *nextImg, const Point2f *prevPts, Point2f *nextPts, uchar *status,
+                                      float *err, Size winSize, TermCriteria criteria, int level, int maxLevel,
+                                      int flags, float minEigThreshold)
 {
     Point2f halfWin((winSize.width - 1) * 0.5f, (winSize.height - 1) * 0.5f);
     const Mat &I = *prevImg;
@@ -208,8 +203,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
         iprevPt.x = cvFloor(prevPt.x);
         iprevPt.y = cvFloor(prevPt.y);
 
-        if (iprevPt.x < -winSize.width || iprevPt.x >= derivI.cols ||
-            iprevPt.y < -winSize.height || iprevPt.y >= derivI.rows)
+        if (iprevPt.x < -winSize.width || iprevPt.x >= derivI.cols || iprevPt.y < -winSize.height ||
+            iprevPt.y >= derivI.rows)
         {
             if (level == 0)
             {
@@ -236,14 +231,14 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
         acctype iA11 = 0, iA12 = 0, iA22 = 0;
         float A11, A12, A22;
 
-// #if CV_SSE2
+        // #if CV_SSE2
         __m128i qw0 = _mm_set1_epi32(iw00 + (iw01 << 16));
         __m128i qw1 = _mm_set1_epi32(iw10 + (iw11 << 16));
         __m128i z = _mm_setzero_si128();
         __m128i qdelta_d = _mm_set1_epi32(1 << (W_BITS1 - 1));
         __m128i qdelta = _mm_set1_epi32(1 << (W_BITS1 - 5 - 1));
         __m128 qA11 = _mm_setzero_ps(), qA12 = _mm_setzero_ps(), qA22 = _mm_setzero_ps();
-// #endif
+        // #endif
 
         // extract the patch from the first image, compute covariation matrix of derivatives
         int x, y;
@@ -299,12 +294,11 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
             // #endif
             for (; x < winSize.width * cn; x++, dsrc += 2, dIptr += 2)
             {
-                int ival = CV_DESCALE(src[x] * iw00 + src[x + cn] * iw01 +
-                                          src[x + stepI] * iw10 + src[x + stepI + cn] * iw11,
-                                      W_BITS1 - 5);
-                int ixval = CV_DESCALE(dsrc[0] * iw00 + dsrc[cn2] * iw01 +
-                                           dsrc[dstep] * iw10 + dsrc[dstep + cn2] * iw11,
-                                       W_BITS1);
+                int ival =
+                    CV_DESCALE(src[x] * iw00 + src[x + cn] * iw01 + src[x + stepI] * iw10 + src[x + stepI + cn] * iw11,
+                               W_BITS1 - 5);
+                int ixval = CV_DESCALE(
+                    dsrc[0] * iw00 + dsrc[cn2] * iw01 + dsrc[dstep] * iw10 + dsrc[dstep + cn2] * iw11, W_BITS1);
                 int iyval = CV_DESCALE(dsrc[1] * iw00 + dsrc[cn2 + 1] * iw01 + dsrc[dstep + 1] * iw10 +
                                            dsrc[dstep + cn2 + 1] * iw11,
                                        W_BITS1);
@@ -334,7 +328,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
         A22 = iA22 * FLT_SCALE;
 
         float D = A11 * A22 - A12 * A12;
-        float minEig = (A22 + A11 - std::sqrt((A11 - A22) * (A11 - A22) + 4.f * A12 * A12)) / (2 * winSize.width * winSize.height);
+        float minEig =
+            (A22 + A11 - std::sqrt((A11 - A22) * (A11 - A22) + 4.f * A12 * A12)) / (2 * winSize.width * winSize.height);
 
         if (err && (flags & OPTFLOW_LK_GET_MIN_EIGENVALS) != 0)
             err[ptidx] = (float)minEig;
@@ -356,8 +351,7 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
             inextPt.x = cvFloor(nextPt.x);
             inextPt.y = cvFloor(nextPt.y);
 
-            if (inextPt.x < -winSize.width || inextPt.x >= J.cols ||
-                inextPt.y < -winSize.height || inextPt.y >= J.rows)
+            if (inextPt.x < -winSize.width || inextPt.x >= J.cols || inextPt.y < -winSize.height || inextPt.y >= J.rows)
             {
                 if (level == 0 && status)
                     status[ptidx] = false;
@@ -416,8 +410,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
                 // #endif
                 for (; x < winSize.width * cn; x++, dIptr += 2)
                 {
-                    int diff = CV_DESCALE(Jptr[x] * iw00 + Jptr[x + cn] * iw01 +
-                                              Jptr[x + stepJ] * iw10 + Jptr[x + stepJ + cn] * iw11,
+                    int diff = CV_DESCALE(Jptr[x] * iw00 + Jptr[x + cn] * iw01 + Jptr[x + stepJ] * iw10 +
+                                              Jptr[x + stepJ + cn] * iw11,
                                           W_BITS1 - 5) -
                                Iptr[x];
                     ib1 += (itemtype)(diff * dIptr[0]);
@@ -435,9 +429,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
             b1 = ib1 * FLT_SCALE;
             b2 = ib2 * FLT_SCALE;
 
-            Point2f delta((float)((A12 * b2 - A22 * b1) * D),
-                          (float)((A12 * b1 - A11 * b2) * D));
-            //delta = -delta;
+            Point2f delta((float)((A12 * b2 - A22 * b1) * D), (float)((A12 * b1 - A11 * b2) * D));
+            // delta = -delta;
 
             nextPt += delta;
             nextPts[ptidx] = nextPt + halfWin;
@@ -445,8 +438,7 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
             if (delta.ddot(delta) <= criteria.epsilon)
                 break;
 
-            if (j > 0 && std::abs(delta.x + prevDelta.x) < 0.01 &&
-                std::abs(delta.y + prevDelta.y) < 0.01)
+            if (j > 0 && std::abs(delta.x + prevDelta.x) < 0.01 && std::abs(delta.y + prevDelta.y) < 0.01)
             {
                 nextPts[ptidx] -= delta * 0.5f;
                 break;
@@ -463,8 +455,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
             inextPoint.x = cvFloor(nextPoint.x);
             inextPoint.y = cvFloor(nextPoint.y);
 
-            if (inextPoint.x < -winSize.width || inextPoint.x >= J.cols ||
-                inextPoint.y < -winSize.height || inextPoint.y >= J.rows)
+            if (inextPoint.x < -winSize.width || inextPoint.x >= J.cols || inextPoint.y < -winSize.height ||
+                inextPoint.y >= J.rows)
             {
                 if (status)
                     status[ptidx] = false;
@@ -486,8 +478,8 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
 
                 for (x = 0; x < winSize.width * cn; x++)
                 {
-                    int diff = CV_DESCALE(Jptr[x] * iw00 + Jptr[x + cn] * iw01 +
-                                              Jptr[x + stepJ] * iw10 + Jptr[x + stepJ + cn] * iw11,
+                    int diff = CV_DESCALE(Jptr[x] * iw00 + Jptr[x + cn] * iw01 + Jptr[x + stepJ] * iw10 +
+                                              Jptr[x + stepJ + cn] * iw11,
                                           W_BITS1 - 5) -
                                Iptr[x];
                     errval += std::abs((float)diff);
@@ -500,40 +492,39 @@ inline void calculate_LK_optical_flow(const cv::Range &range, const Mat *prevImg
 
 void opencv_LKTrackerInvoker::operator()(const cv::Range &range) const
 {
-    calculate_LK_optical_flow(range, prevImg, prevDeriv, nextImg,
-                              prevPts, nextPts, status, err, winSize, criteria,
+    calculate_LK_optical_flow(range, prevImg, prevDeriv, nextImg, prevPts, nextPts, status, err, winSize, criteria,
                               level, maxLevel, flags, minEigThreshold);
 }
 
 bool opencv_LKTrackerInvoker::calculate(cv::Range range) const
 {
-    calculate_LK_optical_flow(range, prevImg, prevDeriv, nextImg,
-                              prevPts, nextPts, status, err, winSize, criteria,
+    calculate_LK_optical_flow(range, prevImg, prevDeriv, nextImg, prevPts, nextPts, status, err, winSize, criteria,
                               level, maxLevel, flags, minEigThreshold);
     return true;
 }
 
-inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays pyramid, Size winSize, int maxLevel, bool withDerivatives,
-                                          int pyrBorder, int derivBorder, bool tryReuseInputImage)
+inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays pyramid, Size winSize, int maxLevel,
+                                          bool withDerivatives, int pyrBorder, int derivBorder, bool tryReuseInputImage)
 {
     Mat img = _img.getMat();
     CV_Assert(img.depth() == CV_8U && winSize.width > 2 && winSize.height > 2);
     int pyrstep = withDerivatives ? 2 : 1;
-#if (CV_MAJOR_VERSION==4)
+#if (CV_MAJOR_VERSION == 4)
     pyramid.create(1, (maxLevel + 1) * pyrstep, 0 /*type*/, -1, true);
 #else
     pyramid.create(1, (maxLevel + 1) * pyrstep, 0 /*type*/, -1, true, 0);
 #endif
     int derivType = CV_MAKETYPE(DataType<deriv_type>::depth, img.channels() * 2);
 
-    //level 0
+    // level 0
     bool lvl0IsSet = false;
     if (tryReuseInputImage && img.isSubmatrix() && (pyrBorder & BORDER_ISOLATED) == 0)
     {
         Size wholeSize;
         Point ofs;
         img.locateROI(wholeSize, ofs);
-        if (ofs.x >= winSize.width && ofs.y >= winSize.height && ofs.x + img.cols + winSize.width <= wholeSize.width && ofs.y + img.rows + winSize.height <= wholeSize.height)
+        if (ofs.x >= winSize.width && ofs.y >= winSize.height && ofs.x + img.cols + winSize.width <= wholeSize.width &&
+            ofs.y + img.rows + winSize.height <= wholeSize.height)
         {
             pyramid.getMatRef(0) = img;
             lvl0IsSet = true;
@@ -546,7 +537,8 @@ inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays p
 
         if (!temp.empty())
             temp.adjustROI(winSize.height, winSize.height, winSize.width, winSize.width);
-        if (temp.type() != img.type() || temp.cols != winSize.width * 2 + img.cols || temp.rows != winSize.height * 2 + img.rows)
+        if (temp.type() != img.type() || temp.cols != winSize.width * 2 + img.cols ||
+            temp.rows != winSize.height * 2 + img.rows)
         {
             // printf_line;
             temp.create(img.rows + winSize.height * 2, img.cols + winSize.width * 2, img.type());
@@ -572,7 +564,8 @@ inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays p
             {
                 temp.adjustROI(winSize.height, winSize.height, winSize.width, winSize.width);
             }
-            if (temp.type() != img.type() || temp.cols != winSize.width * 2 + sz.width || temp.rows != winSize.height * 2 + sz.height)
+            if (temp.type() != img.type() || temp.cols != winSize.width * 2 + sz.width ||
+                temp.rows != winSize.height * 2 + sz.height)
             {
                 temp.create(sz.height + winSize.height * 2, sz.width + winSize.width * 2, img.type());
             }
@@ -580,7 +573,8 @@ inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays p
             pyrDown(prevLevel, thisLevel, sz);
 
             if (pyrBorder != BORDER_TRANSPARENT)
-                copyMakeBorder(thisLevel, temp, winSize.height, winSize.height, winSize.width, winSize.width, pyrBorder | BORDER_ISOLATED);
+                copyMakeBorder(thisLevel, temp, winSize.height, winSize.height, winSize.width, winSize.width,
+                               pyrBorder | BORDER_ISOLATED);
             temp.adjustROI(-winSize.height, -winSize.height, -winSize.width, -winSize.width);
         }
 
@@ -590,24 +584,26 @@ inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays p
 
             if (!deriv.empty())
                 deriv.adjustROI(winSize.height, winSize.height, winSize.width, winSize.width);
-            if (deriv.type() != derivType || deriv.cols != winSize.width * 2 + sz.width || deriv.rows != winSize.height * 2 + sz.height)
+            if (deriv.type() != derivType || deriv.cols != winSize.width * 2 + sz.width ||
+                deriv.rows != winSize.height * 2 + sz.height)
                 deriv.create(sz.height + winSize.height * 2, sz.width + winSize.width * 2, derivType);
 
             Mat derivI = deriv(Rect(winSize.width, winSize.height, sz.width, sz.height));
             calc_sharr_deriv(thisLevel, derivI);
 
             if (derivBorder != BORDER_TRANSPARENT)
-                copyMakeBorder(derivI, deriv, winSize.height, winSize.height, winSize.width, winSize.width, derivBorder | BORDER_ISOLATED);
+                copyMakeBorder(derivI, deriv, winSize.height, winSize.height, winSize.width, winSize.width,
+                               derivBorder | BORDER_ISOLATED);
             deriv.adjustROI(-winSize.height, -winSize.height, -winSize.width, -winSize.width);
         }
 
         sz = Size((sz.width + 1) / 2, (sz.height + 1) / 2);
         if (sz.width <= winSize.width || sz.height <= winSize.height)
         {
-#if (CV_MAJOR_VERSION==4)
-            pyramid.create(1, (level + 1) * pyrstep, 0 /*type*/, -1, true); //check this
-#else 
-            pyramid.create(1, (level + 1) * pyrstep, 0 /*type*/, -1, true, 0); //check this
+#if (CV_MAJOR_VERSION == 4)
+            pyramid.create(1, (level + 1) * pyrstep, 0 /*type*/, -1, true); // check this
+#else
+            pyramid.create(1, (level + 1) * pyrstep, 0 /*type*/, -1, true, 0); // check this
 #endif
             return level;
         }
@@ -618,8 +614,7 @@ inline int opencv_buildOpticalFlowPyramid(InputArray _img, OutputArrayOfArrays p
     return maxLevel;
 }
 
-void LK_optical_flow_kernel::allocate_img_deriv_memory(std::vector<Mat> &img_pyr,
-                                                       std::vector<Mat> &img_pyr_deriv_I,
+void LK_optical_flow_kernel::allocate_img_deriv_memory(std::vector<Mat> &img_pyr, std::vector<Mat> &img_pyr_deriv_I,
                                                        std::vector<Mat> &img_pyr_deriv_I_buff)
 {
     int derivDepth = cv::DataType<deriv_type>::depth;
@@ -642,8 +637,7 @@ void LK_optical_flow_kernel::calc_image_deriv_Sharr(std::vector<cv::Mat> &img_py
                                                     std::vector<cv::Mat> &img_pyr_deriv_I,
                                                     std::vector<cv::Mat> &img_pyr_deriv_I_buff)
 {
-    if (img_pyr_deriv_I_buff.size() == 0 ||
-        img_pyr_deriv_I_buff[0].size().width == 0 ||
+    if (img_pyr_deriv_I_buff.size() == 0 || img_pyr_deriv_I_buff[0].size().width == 0 ||
         img_pyr_deriv_I_buff[0].size().height == 0)
     {
         allocate_img_deriv_memory(img_pyr, img_pyr_deriv_I, img_pyr_deriv_I_buff);
@@ -652,11 +646,13 @@ void LK_optical_flow_kernel::calc_image_deriv_Sharr(std::vector<cv::Mat> &img_py
     for (int level = m_maxLevel; level >= 0; level--)
     {
         cv::Size imgSize = img_pyr[level].size();
-        cv::Mat _derivI(imgSize.height + m_lk_win_size.height * 2,
-                        imgSize.width + m_lk_win_size.width * 2, img_pyr_deriv_I_buff[level].type(), img_pyr_deriv_I_buff[level].ptr());
-        img_pyr_deriv_I[level] = _derivI(cv::Rect(m_lk_win_size.width, m_lk_win_size.height, imgSize.width, imgSize.height));
+        cv::Mat _derivI(imgSize.height + m_lk_win_size.height * 2, imgSize.width + m_lk_win_size.width * 2,
+                        img_pyr_deriv_I_buff[level].type(), img_pyr_deriv_I_buff[level].ptr());
+        img_pyr_deriv_I[level] =
+            _derivI(cv::Rect(m_lk_win_size.width, m_lk_win_size.height, imgSize.width, imgSize.height));
         calc_sharr_deriv(img_pyr[level], img_pyr_deriv_I[level]);
-        cv::copyMakeBorder(img_pyr_deriv_I[level], _derivI, m_lk_win_size.height, m_lk_win_size.height, m_lk_win_size.width, m_lk_win_size.width, cv::BORDER_CONSTANT | cv::BORDER_ISOLATED);
+        cv::copyMakeBorder(img_pyr_deriv_I[level], _derivI, m_lk_win_size.height, m_lk_win_size.height,
+                           m_lk_win_size.width, m_lk_win_size.width, cv::BORDER_CONSTANT | cv::BORDER_ISOLATED);
     }
 }
 
@@ -682,9 +678,8 @@ void LK_optical_flow_kernel::set_termination_criteria(cv::TermCriteria &crit)
     // m_terminate_criteria.epsilon *= m_terminate_criteria.epsilon;
 }
 
-void LK_optical_flow_kernel::calc(InputArray _prevImg, InputArray _nextImg,
-                                  InputArray _prevPts, InputOutputArray _nextPts,
-                                  OutputArray _status, OutputArray _err)
+void LK_optical_flow_kernel::calc(InputArray _prevImg, InputArray _nextImg, InputArray _prevPts,
+                                  InputOutputArray _nextPts, OutputArray _status, OutputArray _err)
 {
     Mat prevPtsMat = _prevPts.getMat();
     const int derivDepth = DataType<deriv_type>::depth;
@@ -738,11 +733,10 @@ void LK_optical_flow_kernel::calc(InputArray _prevImg, InputArray _nextImg,
         // cout << "Image size = " << prevPyr[level * lvlStep1].size() << ", level = " << level << endl;
         CV_Assert(m_prev_img_pyr[level].size() == m_curr_img_pyr[level].size());
         CV_Assert(m_prev_img_pyr[level].type() == m_curr_img_pyr[level].type());
-        parallel_for_(Range(0, n_points), opencv_LKTrackerInvoker(&m_prev_img_pyr[level], &m_prev_img_deriv_I[level],
-                                                                  &m_curr_img_pyr[level], prevPts, nextPts,
-                                                                  status, err,
-                                                                  m_lk_win_size, m_terminate_criteria, level, m_maxLevel,
-                                                                  flags, (float)minEigThreshold));
+        parallel_for_(Range(0, n_points),
+                      opencv_LKTrackerInvoker(&m_prev_img_pyr[level], &m_prev_img_deriv_I[level],
+                                              &m_curr_img_pyr[level], prevPts, nextPts, status, err, m_lk_win_size,
+                                              m_terminate_criteria, level, m_maxLevel, flags, (float)minEigThreshold));
     }
 }
 
@@ -766,8 +760,8 @@ int test_fun(int i, int j)
 }
 
 int LK_optical_flow_kernel::track_image(const cv::Mat &curr_img, const std::vector<cv::Point2f> &last_tracked_pts,
-                                        std::vector<cv::Point2f> &curr_tracked_pts,
-                                        std::vector<uchar> &status, int opm_method)
+                                        std::vector<cv::Point2f> &curr_tracked_pts, std::vector<uchar> &status,
+                                        int opm_method)
 {
     // Common_tools::Timer tim;
     // tim.tic();
@@ -789,32 +783,27 @@ int LK_optical_flow_kernel::track_image(const cv::Mat &curr_img, const std::vect
         status[i] = 1;
     }
 
-    cv::parallel_for_(
-        Range(0, last_tracked_pts.size()), [&](const Range &range) {
-          //   cout << "Range " << range.start << ", " << range.end << endl;
-          for (int level = m_maxLevel; level >= 0; level--) {
-            calculate_LK_optical_flow(
-                range, &m_prev_img_pyr[level], &m_prev_img_deriv_I[level],
-                &m_curr_img_pyr[level], last_tracked_pts.data(),
-                curr_tracked_pts.data(), status.data(), 0, m_lk_win_size,
-                m_terminate_criteria, level, m_maxLevel, flags,
-                minEigThreshold);
-          }
-        });
+    cv::parallel_for_(Range(0, last_tracked_pts.size()), [&](const Range &range) {
+        //   cout << "Range " << range.start << ", " << range.end << endl;
+        for (int level = m_maxLevel; level >= 0; level--)
+        {
+            calculate_LK_optical_flow(range, &m_prev_img_pyr[level], &m_prev_img_deriv_I[level], &m_curr_img_pyr[level],
+                                      last_tracked_pts.data(), curr_tracked_pts.data(), status.data(), 0, m_lk_win_size,
+                                      m_terminate_criteria, level, m_maxLevel, flags, minEigThreshold);
+        }
+    });
 
     swap_image_buffer();
 
     return std::accumulate(status.begin(), status.end(), 0);
 }
 
-void calculate_optical_flow(InputArray _prevImg, InputArray _nextImg,
-                            InputArray _prevPts, InputOutputArray _nextPts,
-                            OutputArray _status, OutputArray _err,
-                            Size winSize, int maxLevel,
-                            TermCriteria criteria,
+void calculate_optical_flow(InputArray _prevImg, InputArray _nextImg, InputArray _prevPts, InputOutputArray _nextPts,
+                            OutputArray _status, OutputArray _err, Size winSize, int maxLevel, TermCriteria criteria,
                             int flags, double minEigThreshold)
 {
     // printf_line;
-    cv::Ptr<LK_optical_flow_kernel> optflow_kernel = cv::makePtr<LK_optical_flow_kernel>(winSize, maxLevel, criteria, flags, minEigThreshold);
+    cv::Ptr<LK_optical_flow_kernel> optflow_kernel =
+        cv::makePtr<LK_optical_flow_kernel>(winSize, maxLevel, criteria, flags, minEigThreshold);
     optflow_kernel->calc(_prevImg, _nextImg, _prevPts, _nextPts, _status, _err);
 }

@@ -1,21 +1,21 @@
-/* 
-This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored, 
+/*
+This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored,
 LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package".
 
 Author: Jiarong Lin   < ziv.lin.ljr@gmail.com >
 
 If you use any code of this repo in your academic research, please cite at least
 one of our papers:
-[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored, 
-    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package." 
+[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored,
+    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package."
 [2] Xu, Wei, et al. "Fast-lio2: Fast direct lidar-inertial odometry."
 [3] Lin, Jiarong, et al. "R2LIVE: A Robust, Real-time, LiDAR-Inertial-Visual
-     tightly-coupled state Estimator and mapping." 
-[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry 
+     tightly-coupled state Estimator and mapping."
+[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry
     package by tightly-coupled iterated kalman filter."
-[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for 
+[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for
     Robotic Applications."
-[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision 
+[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision
     LiDAR odometry and mapping package for LiDARs of small FoV."
 
 For commercial use, please contact me < ziv.lin.ljr@gmail.com > and
@@ -52,11 +52,11 @@ Dr. Fu Zhang < fuzhang@hku.hk >.
 /*
  * Make screen print colorful :)
  * Author: Jiarong Lin
- * Related link: 
- * [1] https://en.wikipedia.org/wiki/ANSI_escape_code 
+ * Related link:
+ * [1] https://en.wikipedia.org/wiki/ANSI_escape_code
  * [2] https://github.com/caffedrine/CPP_Utils/blob/597fe5200be87fa1db2d2aa5d8a07c3bc32a66cd/Utils/include/AnsiColors.h
- * 
-*/
+ *
+ */
 
 // const std::string _tools_color_printf_version = "V1.0";
 // const std::string _tools_color_printf_info = "[Init]: Add macros, add scope_color()";
@@ -122,7 +122,7 @@ using std::endl;
 
 struct _Scope_color
 {
-    _Scope_color( const char * color )
+    _Scope_color(const char *color)
     {
         cout << color;
     }

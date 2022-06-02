@@ -1,21 +1,21 @@
-/* 
-This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored, 
+/*
+This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored,
 LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package".
 
 Author: Jiarong Lin   < ziv.lin.ljr@gmail.com >
 
 If you use any code of this repo in your academic research, please cite at least
 one of our papers:
-[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored, 
-    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package." 
+[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored,
+    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package."
 [2] Xu, Wei, et al. "Fast-lio2: Fast direct lidar-inertial odometry."
 [3] Lin, Jiarong, et al. "R2LIVE: A Robust, Real-time, LiDAR-Inertial-Visual
-     tightly-coupled state Estimator and mapping." 
-[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry 
+     tightly-coupled state Estimator and mapping."
+[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry
     package by tightly-coupled iterated kalman filter."
-[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for 
+[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for
     Robotic Applications."
-[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision 
+[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision
     LiDAR odometry and mapping package for LiDARs of small FoV."
 
 For commercial use, please contact me < ziv.lin.ljr@gmail.com > and
@@ -45,8 +45,8 @@ Dr. Fu Zhang < fuzhang@hku.hk >.
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-#include "tools_timer.hpp"
 #include "tools_logger.hpp"
+#include "tools_timer.hpp"
 #include <thread>
 int main()
 {
@@ -54,19 +54,19 @@ int main()
     Common_tools::Timer timer;
     Common_tools::Cost_time_logger cost_time_logger;
     cost_time_logger.init_log("/home/ziv/temp/cost_time_logger.log");
-    for(int i =0 ; i < 100; i ++)
+    for (int i = 0; i < 100; i++)
     {
         timer.tic("Test_1");
-        std::this_thread::sleep_for(std::chrono::microseconds(50));   
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
         cost_time_logger.record(timer, "Test_1");
         timer.tic("Test_2");
-        std::this_thread::sleep_for(std::chrono::microseconds(60));   
+        std::this_thread::sleep_for(std::chrono::microseconds(60));
         cost_time_logger.record(timer, "Test_2");
         timer.tic("Test_3");
-        std::this_thread::sleep_for(std::chrono::microseconds(70));   
+        std::this_thread::sleep_for(std::chrono::microseconds(70));
         cost_time_logger.record(timer, "Test_3");
         timer.tic("Test_4");
-        std::this_thread::sleep_for(std::chrono::microseconds(80));   
+        std::this_thread::sleep_for(std::chrono::microseconds(80));
         cost_time_logger.record(timer, "Test_4");
         cost_time_logger.flush();
     }

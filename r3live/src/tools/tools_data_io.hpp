@@ -1,21 +1,21 @@
-/* 
-This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored, 
+/*
+This code is the implementation of our paper "R3LIVE: A Robust, Real-time, RGB-colored,
 LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package".
 
 Author: Jiarong Lin   < ziv.lin.ljr@gmail.com >
 
 If you use any code of this repo in your academic research, please cite at least
 one of our papers:
-[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored, 
-    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package." 
+[1] Lin, Jiarong, and Fu Zhang. "R3LIVE: A Robust, Real-time, RGB-colored,
+    LiDAR-Inertial-Visual tightly-coupled state Estimation and mapping package."
 [2] Xu, Wei, et al. "Fast-lio2: Fast direct lidar-inertial odometry."
 [3] Lin, Jiarong, et al. "R2LIVE: A Robust, Real-time, LiDAR-Inertial-Visual
-     tightly-coupled state Estimator and mapping." 
-[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry 
+     tightly-coupled state Estimator and mapping."
+[4] Xu, Wei, and Fu Zhang. "Fast-lio: A fast, robust lidar-inertial odometry
     package by tightly-coupled iterated kalman filter."
-[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for 
+[5] Cai, Yixi, Wei Xu, and Fu Zhang. "ikd-Tree: An Incremental KD Tree for
     Robotic Applications."
-[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision 
+[6] Lin, Jiarong, and Fu Zhang. "Loam-livox: A fast, robust, high-precision
     LiDAR odometry and mapping package for LiDARs of small FoV."
 
 For commercial use, please contact me < ziv.lin.ljr@gmail.com > and
@@ -47,8 +47,8 @@ Dr. Fu Zhang < fuzhang@hku.hk >.
 */
 #ifndef __TOOLS_DATA_IO_HPP__
 #define __TOOLS_DATA_IO_HPP__
-#include <iostream>
 #include <Eigen/Eigen>
+#include <iostream>
 #include <string>
 #include <vector>
 namespace Common_tools
@@ -56,90 +56,88 @@ namespace Common_tools
 using std::cout;
 using std::endl;
 
-inline void save_matrix_to_txt( std::string file_name, eigen_mat< -1, -1 > mat )
+inline void save_matrix_to_txt(std::string file_name, eigen_mat<-1, -1> mat)
 {
 
-    FILE *fp = fopen( file_name.c_str(), "w+" );
-    int   cols_size = mat.cols();
-    int   rows_size = mat.rows();
-    for ( int i = 0; i < rows_size; i++ )
+    FILE *fp = fopen(file_name.c_str(), "w+");
+    int cols_size = mat.cols();
+    int rows_size = mat.rows();
+    for (int i = 0; i < rows_size; i++)
     {
-        for ( int j = 0; j < cols_size; j++ )
+        for (int j = 0; j < cols_size; j++)
         {
-            fprintf( fp, "%.15f ", mat( i, j ) );
+            fprintf(fp, "%.15f ", mat(i, j));
         }
-        fprintf( fp, "\r\n" );
+        fprintf(fp, "\r\n");
     }
     // cout <<"Save matrix to: "  << file_name << endl;
-    fclose( fp );
+    fclose(fp);
 }
 
-inline void save_matrix_to_txt( std::string file_name, Eigen::SparseMatrix< double > mat )
+inline void save_matrix_to_txt(std::string file_name, Eigen::SparseMatrix<double> mat)
 {
-    save_matrix_to_txt( file_name, mat.toDense() );
+    save_matrix_to_txt(file_name, mat.toDense());
 }
 
-template<typename T=float>
-inline Eigen::Matrix<T, -1, -1> mat_from_data_vec(const std::vector< std::vector< T > > & data_vec  )
-{   
+template <typename T = float>
+inline Eigen::Matrix<T, -1, -1> mat_from_data_vec(const std::vector<std::vector<T>> &data_vec)
+{
     Eigen::Matrix<T, -1, -1> res_mat;
-    if(data_vec.size() ==0 )
+    if (data_vec.size() == 0)
     {
         return res_mat;
     }
-    res_mat.resize( data_vec.size(), data_vec[ 0 ].size() );
-    for (unsigned int i = 0; i < data_vec.size(); i++ )
+    res_mat.resize(data_vec.size(), data_vec[0].size());
+    for (unsigned int i = 0; i < data_vec.size(); i++)
     {
-        for (unsigned int j = 0; j < data_vec[i].size(); j++ )
+        for (unsigned int j = 0; j < data_vec[i].size(); j++)
         {
-            res_mat( i, j ) = data_vec[ i ][ j ];
+            res_mat(i, j) = data_vec[i][j];
         }
     }
     return res_mat;
 }
-  
-template<typename T=float>
-inline std::vector<std::vector<T>> load_data_from_txt(std::string file_name)
+
+template <typename T = float> inline std::vector<std::vector<T>> load_data_from_txt(std::string file_name)
 {
     static const int DATA_RESERVE_SIZE = 102400;
     std::vector<std::vector<T>> data_mat;
-    FILE * fp;
+    FILE *fp;
     // cout << "Load date from: " << file_name.c_str() << endl;
     fp = fopen(file_name.c_str(), "r");
-    if(fp == nullptr)
+    if (fp == nullptr)
     {
         cout << "Can not load data from" << file_name << ", please check!" << endl;
     }
     else
-    { 
+    {
         char line_str[DATA_RESERVE_SIZE];
-        while(fgets(line_str, DATA_RESERVE_SIZE, fp ) != NULL)
+        while (fgets(line_str, DATA_RESERVE_SIZE, fp) != NULL)
         {
             std::vector<T> data_vec;
             data_vec.reserve(1e4);
             T data = -3e8;
             // cout << std::string(line_str) ;
             std::stringstream ss(line_str);
-            //while(!ss.eof())
-            while(!ss.eof())
+            // while(!ss.eof())
+            while (!ss.eof())
             {
-                if((ss >> data))
+                if ((ss >> data))
                 {
                     data_vec.push_back(data);
                 }
             }
-            data_mat.push_back( data_vec );
+            data_mat.push_back(data_vec);
         }
         fclose(fp);
     }
     return data_mat;
 }
 
-template<typename T=float>
-inline Eigen::Matrix<T, -1, -1> load_mat_from_txt(std::string file_name)
+template <typename T = float> inline Eigen::Matrix<T, -1, -1> load_mat_from_txt(std::string file_name)
 {
     return mat_from_data_vec<T>(load_data_from_txt<T>(file_name));
 }
 
-}
+} // namespace Common_tools
 #endif
